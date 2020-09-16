@@ -93,25 +93,30 @@ router.post('/modify', function(req, res, next) {
 	passport.authenticate('jwt', {session: false}, (err, user, info) => {
 		if(err) return res.sendStatus(500);
 		if(user) {
-			models.Post.findOne({post_id: post_id}, function(err, post) {
-				if(err){
-					throw err;
-				}
-				else{
+			models.Post.findOne({
+				where: {
+					post_id: post_id,
+					author: String(user.user_id)
+			}}).then(post => {
+				if(post) {
 					post.contents = contents;
-					post.save(function(err) {
-						if(err){
-							throw err;
-						}
-						else{
-							res.json({status: "SUCCESS"});
-						}
+					post.save()
+					.then(() => {
+						return res.json({status: "SUCCESS"});
+					}).catch(err => {
+						if(err) console.log(err);
+						return res.json({status: "error"});
 					});
-				} 
-			});			
+				} else {
+					return res.json({status: "unAuthorized"});
+				}
+			}).catch(err => {
+				if(err) console.log(err);
+				return res.json({status: "error"});
+			});		
 		}
 		else
-			return res.sendStatus(401);
+			return res.json({status: "unAuthorized"});
 	})(req, res);
 });
 
