@@ -4,6 +4,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var models = require('./models');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
@@ -15,7 +17,7 @@ var app = express();
 
 passport.use('kakao', new kakaoStrategy({
   clientID: '{REST_API}',
-  callbackURL: 'http://localhost:3000/user/kakao/oauth'
+  callbackURL: 'http://localhost:3000/users/kakao/oauth'
 },
   function(accessToken, refreshToken, profile, done) {        
     let newId = profile.id;
@@ -52,10 +54,9 @@ passport.use(new JWTStrategy({
   secretOrKey: 'secret_key' //temp  
 },
   function(jwtPayload, done) {
-    console.log(jwtPayload.id);
     return models.User.findOne({
       where: {
-        id: jwtPayload.id
+        user_id: jwtPayload.user_id
       }
     }).then(user => {
       return done(null, user);

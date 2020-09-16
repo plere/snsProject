@@ -8,7 +8,7 @@ router.get('/', (req, res, next) => {
 	passport.authenticate('jwt', {session: false}, (err, user, info) => {
 		if(err) return res.sendStatus(500);
 		if(user)
-			return res.render('index', {name: user_id, picture: '/images/user.png'});
+			return res.render('index', {name: user.user_id, picture: '/images/user.png'});
 		else
 			return res.render('index', {name: '비로그인 유저', picture: '/images/user.png'});
 	})(req, res, next);
