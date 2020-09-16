@@ -27,8 +27,6 @@ router.post('/write', function(req, res, next) {
 	var contents = req.body.contents;
 	var date = Date.now();	
 
-	console.log(req.body);
-
 	models.Post.create({
 		author: author,
 		picture: picture,
@@ -54,12 +52,11 @@ router.post('/like', function(req, res, next) {
 		}
 	}).then(post => {
 		post.like++;
-		post.save((err) => {
-			if(err) {
-				throw err;
-			} else {
-				return res.json({status: "SUCCESS"});
-			}
+		post.save().then(() => {
+			res.json({status: "SUCCESS"});
+		}).catch(err => {
+			if(err) console.log(err);
+			return res.sendStatus(500);
 		});
 	}).catch(err => {
 		console.log(err);
