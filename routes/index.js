@@ -15,8 +15,7 @@ router.get('/', (req, res, next) => {
 });
 
 router.get('/load', function(req, res, next) {
-	models.Post.findAll().then(results => {
-		console.log(results);
+	models.Post.findAll().then(results => {		
 		res.json(results);
 	});
 });
@@ -68,20 +67,23 @@ router.post('/del', function(req, res, next) {
 	var post_id = req.body.post_id;
 
 	passport.authenticate('jwt', {session: false}, (err, user, info) => {
-		if(err) return res.sendStatus(500);
+		if(err) return res.sendStatus(500);		
 		if(user) {
-			models.Post.deleteOne({post_id: post_id}, (err, result) => {
-				if(err){
-					throw err;
+			models.Post.destroy({
+				where: {
+					post_id: post_id, 
+					author: String(user.user_id)
 				}
-				else{
-					return res.json({status: "SUCCESS"});
-				}
+			}).then(() => {
+				return res.json({status: "SUCCESS"});
+			}).catch(err => {
+				if(err) console.log(err);
+				return res.sendStatus(500);
 			});
 		}
 		else
 			return res.sendStatus(401);
-	})(req, res);
+	})(req, res, next);
 });
 
 router.post('/modify', function(req, res, next) {
