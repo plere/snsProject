@@ -20,9 +20,14 @@ router.get('/kakao/oauth', passport.authenticate('kakao', {
   'secret_key'
   );  
   res.cookie('jwt', token);
-  return res.sendStatus(200);
+  return res.redirect('/');
 }
 );
 
+router.get('/logout', (req, res) => {
+  res.clearCookie("jwt");
+  return res.redirect('/');
+}
+);
 
 module.exports = router;
