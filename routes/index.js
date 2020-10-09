@@ -1,5 +1,6 @@
 var express = require('express');
 const passport = require('passport');
+const { sequelize } = require('../models');
 var router = express.Router();
 var models = require('../models');
 
@@ -14,9 +15,44 @@ router.get('/', (req, res, next) => {
 	})(req, res, next);
 });
 
-router.get('/load', function(req, res, next) {
-	models.Post.findAll().then(results => {		
-		res.json(results);
+router.get('/load', async function(req, res, next) {
+	await models.Post.findAll().then(async posts => {				
+		if(posts) {
+			for(post of posts) {
+				if(post.comments) {
+					let cmtArr = [];
+					for(val of post.comments) {
+						const comment = await models.Comment.findOne({
+							where: {
+								comment_id: val
+							}
+						});
+						cmtArr.push({author: comment.author, comment: comment.comment});
+					}
+					posts.comments = cmtArr.slice();
+				}
+			}
+			// await posts.forEach(async post => {
+			// 	if(post.comments) {
+			// 		let cmtArr = [];
+			// 		await post.comments.forEach(async val => {										
+			// 			const comment = await models.Comment.findOne({
+			// 				where: {
+			// 					comment_id: val
+			// 				}
+			// 			});						
+			// 			cmtArr.push({author: comment.author, comment: comment.comment});
+			// 			console.log("cmtArr 1" + cmtArr);
+			// 		});
+			// 		console.log("cmtArr 2" + cmtArr);
+			// 		posts.comments = cmtArr.slice();
+			// 		console.log("posts " + posts);
+			// 	}
+			// });
+			
+			console.log(posts);
+			res.json(posts);
+		}
 	});
 });
 
@@ -75,7 +111,7 @@ router.post('/del', function(req, res, next) {
 					author: String(user.user_id)
 				}
 			}).then(() => {
-				return res.json({status: "SUCCESS"});
+				return res.redirect('/');
 			}).catch(err => {
 				if(err) console.log(err);
 				return res.sendStatus(500);
@@ -88,7 +124,7 @@ router.post('/del', function(req, res, next) {
 
 router.post('/modify', function(req, res, next) {
 	var post_id = req.body.post_id;
-	var contents = req.body.contents;
+	var contents = req.body.contents;	
 	
 	passport.authenticate('jwt', {session: false}, (err, user, info) => {
 		if(err) return res.sendStatus(500);
@@ -119,5 +155,59 @@ router.post('/modify', function(req, res, next) {
 			return res.json({status: "unAuthorized"});
 	})(req, res);
 });
+
+router.post('/comment', (req, res, next) => {
+	console.log(req.body);
+	passport.authenticate('jwt', {session: false}, async (err, user, info) => {
+		if(err){
+			console.log(err);
+			return res.sendStatus(500);
+		} 
+		const t = await models.sequelize.transaction();
+		let user_id = '비 로그인 유저';
+		let date = Date.now();	
+		if(user)
+			user_id = user.user_id;
+		try {
+			const comment = await models.Comment.create({
+				author: user_id,
+				comment: req.body.comment,
+				updatedAt: date,
+				createdAt: date
+			}, {transaction: t});
+
+			const post = await models.Post.findOne({
+				where: {
+				  post_id: req.body.post_id
+				},
+				transaction: t 
+			  });
+
+			console.log("type"+typeof post.comment);
+
+			await post.update({
+				comments: models.sequelize.fn('array_append', models.sequelize.col('comments'), comment.comment_id)
+			}, {
+				where: {
+					post_id: req.body.post_id
+					},
+					transaction: t
+			});
+			  
+			await t.commit();
+		} catch(err) {
+			console.log(err);
+			await t.rollback();
+		}
+
+		if(user) {
+			return res.render('index', {name: user.user_id, picture: '/images/user.png'});
+		}
+		else{
+			return res.render('index', {name: '비로그인 유저', picture: '/images/user.png'});
+		}			
+	})(req, res, next);
+});
+
 
 module.exports = router;

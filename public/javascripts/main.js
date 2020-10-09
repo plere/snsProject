@@ -19,6 +19,7 @@ var load = function() {
 				$("#wall .item:first .right").append("<div class='comments'></div>");
 				
 				$(this.comments).each(function (j) {
+					console.log(this.author);
 					$("#wall .item:first .right .comments").append("<div class='comment_item'>" + this.author + ": " + this.comment + "</div>");
 				});
 				
