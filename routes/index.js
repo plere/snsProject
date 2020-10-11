@@ -26,7 +26,7 @@ router.get('/load', function(req, res, next) {
 							comment_id: val
 						}
 					});
-					cmtArr.push({author: comment.author, comment: comment.comment});
+					cmtArr.push({comment_id: comment.comment_id, author: comment.author, comment: comment.comment});
 				}
 				post.dataValues.comments = cmtArr.slice();
 			}
@@ -189,5 +189,38 @@ router.post('/comment', (req, res, next) => {
 	})(req, res, next);
 });
 
+router.post('/comment_modify', (req, res)=>{
+	var comment_id = req.body.comment_id;
+	var comment = req.body.comment;	
+	
+	passport.authenticate('jwt', {session: false}, (err, user, info) => {
+		if(err) return res.sendStatus(500);
+		if(user) {
+			models.Comment.findOne({
+				where: {
+					comment_id: comment_id,
+					author: String(user.user_id)
+			}}).then(result => {
+				if(result) {
+					result.comment = comment;
+					result.save()
+					.then(() => {
+						return res.json({status: "SUCCESS"});
+					}).catch(err => {
+						if(err) console.log(err);
+						return res.json({status: "error"});
+					});
+				} else {
+					return res.json({status: "unAuthorized"});
+				}
+			}).catch(err => {
+				if(err) console.log(err);
+				return res.json({status: "error"});
+			});		
+		}
+		else
+			return res.json({status: "unAuthorized"});
+	})(req, res);
+});
 
 module.exports = router;
