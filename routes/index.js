@@ -15,44 +15,24 @@ router.get('/', (req, res, next) => {
 	})(req, res, next);
 });
 
-router.get('/load', async function(req, res, next) {
-	await models.Post.findAll().then(async posts => {				
-		if(posts) {
-			for(post of posts) {
-				if(post.comments) {
-					let cmtArr = [];
-					for(val of post.comments) {
-						const comment = await models.Comment.findOne({
-							where: {
-								comment_id: val
-							}
-						});
-						cmtArr.push({author: comment.author, comment: comment.comment});
-					}
-					posts.comments = cmtArr.slice();
+router.get('/load', function(req, res, next) {
+	models.Post.findAll().then(async posts => {
+		for(post of posts) {			
+			if(post.comments) {
+				let cmtArr = [];
+				for(val of post.comments) {
+					const comment = await models.Comment.findOne({
+						where: {
+							comment_id: val
+						}
+					});
+					cmtArr.push({author: comment.author, comment: comment.comment});
 				}
+				post.dataValues.comments = cmtArr.slice();
 			}
-			// await posts.forEach(async post => {
-			// 	if(post.comments) {
-			// 		let cmtArr = [];
-			// 		await post.comments.forEach(async val => {										
-			// 			const comment = await models.Comment.findOne({
-			// 				where: {
-			// 					comment_id: val
-			// 				}
-			// 			});						
-			// 			cmtArr.push({author: comment.author, comment: comment.comment});
-			// 			console.log("cmtArr 1" + cmtArr);
-			// 		});
-			// 		console.log("cmtArr 2" + cmtArr);
-			// 		posts.comments = cmtArr.slice();
-			// 		console.log("posts " + posts);
-			// 	}
-			// });
-			
-			console.log(posts);
-			res.json(posts);
-		}
+		}					
+		
+		res.json(posts);
 	});
 });
 
