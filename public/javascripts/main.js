@@ -16,16 +16,14 @@ var load = function() {
 				$("#wall .item:first .right").append("<div class='author'><b>" + this.author + "</b> (" + this.updatedAt + ")&nbsp;&nbsp; <span class='text_button modify'>수정</span> <span class='text_button del'>삭제</span> <span class='text_button like'>좋아요</span></div>");
 				$("#wall .item:first .right").append("<div class='contents " + id + "'>" + this.contents + "</div>");				
 				$("#wall .item:first .right").append("<div class='likes'>LIKE : " + this.like + "</div>");
-				$("#wall .item:first .right").append("<div class='comments'></div>");
-
-				
+				$("#wall .item:first .right").append("<div class='comments'></div>");				
 				
 				$(this.comments).each(function (j) {					
 					var cmt_id = this.comment_id;
 
-					$("#wall .item:first .right .comments").append("<div class='cmt_author'><b>" + this.author + "</b> &nbsp;&nbsp; <span class='text_button comment_modify'>수정</span> <span class='text_button comment_del'>삭제</span> </div>");
-					$("#wall .item:first .right .comments").append("<div class='comment_item " + cmt_id + "'>" + this.comment + "</div>");					
-
+					$("#wall .item:first .comments").append("<div class='cmt_author'><b>" + this.author + "</b> &nbsp;&nbsp; <span class='text_button comment_modify'>수정</span> <span class='text_button comment_del'>삭제</span> </div>");
+					$("#wall .item:first .comments").append("<div class='comment_item " + cmt_id + "'>" + this.comment + "</div>");
+					
 					$("#wall .item:first .comment_modify").click(function(evt) {						
 						editing = true;
 						if(cnt===0){							
@@ -116,7 +114,7 @@ var write = function(contents) {
 		'picture' : $("#message").find(".photo").attr('src')
 	};
 	
-	$.post('/write', postdata, function() {
+	$.post('/posts', postdata, function() {
 		load();
 	});
 };
@@ -124,11 +122,10 @@ var write = function(contents) {
 var modify = function(contents, id) {
 	var postdata = {
 		'author' : $("#author").val(),
-		'contents' : contents,
-		'post_id' : id
+		'contents' : contents
 	};
 	
-	$.post('/modify', postdata, function() {
+	$.put('/posts/'+id, postdata, function() {
 		load();
 	});
 };
@@ -136,45 +133,53 @@ var modify = function(contents, id) {
 var comment = function(comment, id) {
 	var postdata = {
 		'author' : $("#author").val(),
-		'comment' : comment,
-		'post_id' : id
+		'comment' : comment
 	};	
 	
-	$.post('/comment', postdata, function() {
+	$.post('/comments/'+id, postdata, function() {
 		load();
 	});
 };
 
 var comment_modify = function(contents, id) {
 	var postdata = {
-		'comment' : contents,
-		'comment_id' : id
+		'comment' : contents
 	};
 	
-	$.post('/comment_modify', postdata, function() {
+	$.put('/comments/'+id, postdata, function() {
 		load();
 	});
 };
 
-var del = function(id) {
-	var postdata = {
-		'post_id' : id
-	};
-	
-	$.post('/del', postdata, function() {
+var del = function(id) {	
+	$.delete('/posts/'+id, {}, function() {
 		load();
 	});
 };
 
 var like = function(id) {
-	var postdata = {
-		'post_id' : id
-	};
-	
-	$.post('/like', postdata, function() {
+	$.put('/posts/like/'+id, postdata, function() {
 		load();
 	});
 };
+
+$.delete = function(url, data, callback) {	
+	$.ajax({
+		url: url,
+		type: 'DELETE',
+		data: data,
+		success: callback		
+	});
+}
+
+$.put = function(url, data, callback) {	
+	$.ajax({
+		url: url,
+		type: 'PUT',
+		data: data,
+		success: callback		
+	});
+}
 
 $(document).ready(function (){
 	$("#message textarea").on("focus", function() {
