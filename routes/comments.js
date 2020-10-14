@@ -87,4 +87,48 @@ router.put('/:comment_id', (req, res)=>{
 	})(req, res);
 });
 
+
+router.delete('/:comment_id', function(req, res, next) {
+	var post_id = req.body.post_id;
+	var comment_id = req.params.comment_id;
+
+	passport.authenticate('jwt', {session: false}, async (err, user, info) => {
+		if(err) return res.sendStatus(500);		
+		if(user) {
+			const t = await models.sequelize.transaction();
+			try {
+				let comment = await models.Comment.destroy({
+					where: {
+						comment_id: comment_id,
+						author: String(user.user_id)
+					},
+					transaction: t
+				});	
+				
+				if(comment) {
+					await models.Post.update({
+						comments: models.sequelize.fn('array_remove', models.sequelize.col('comments'), comment_id)
+					}, {
+						where: {
+							post_id: post_id
+						},
+						transaction: t
+					});
+				}
+	
+				await t.commit();
+
+			} catch(err) {
+				console.log(err);
+				await t.rollback();
+				return res.sendStatus(500);
+			}			
+
+			return res.sendStatus(200);
+		}
+		else
+			return res.sendStatus(401);
+	})(req, res, next);
+});
+
 module.exports = router;

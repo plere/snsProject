@@ -21,17 +21,19 @@ var load = function() {
 				$(this.comments).each(function (j) {					
 					var cmt_id = this.comment_id;
 
-					$("#wall .item:first .comments").append("<div class='cmt_author'><b>" + this.author + "</b> &nbsp;&nbsp; <span class='text_button comment_modify'>수정</span> <span class='text_button comment_del'>삭제</span> </div>");
-					$("#wall .item:first .comments").append("<div class='comment_item " + cmt_id + "'>" + this.comment + "</div>");
-					
-					$("#wall .item:first .comment_modify").click(function(evt) {						
-						editing = true;
-						if(cnt===0){							
-							var contents = $("#wall .comments ." + cmt_id).html();
-							$("#wall ." + cmt_id).html("<textarea id='textarea_" + cmt_id + "' class='textarea_modify'>" + contents + "</textarea>");
-							cnt=1;
+					$("#wall .item:first .right .comments").append("<div class='cmt_author'><b>" + this.author + "</b> &nbsp;&nbsp; <span class='text_button comment_modify'>수정</span> <span class='text_button comment_del'>삭제</span> </div>");
+					$("#wall .item:first .right .comments").append("<div class='comment_item cmt_id" + cmt_id + "'>" + this.comment + "</div>");					
+
+					var cmt_cnt = 0;
+
+					$("#wall .comments:first .comment_modify:last").click(function(evt) {						
+						editing = true;						
+						if(cmt_cnt===0){							
+							var contents = $("#wall .cmt_id" + cmt_id).html();
+							$("#wall .cmt_id" + cmt_id).html("<textarea id='textarea_cmt" + cmt_id + "' class='textarea_modify'>" + contents + "</textarea>");
+							cmt_cnt=1;
 						}						
-						$("#textarea_" + cmt_id).keypress(function(evt) {
+						$("#textarea_cmt" + cmt_id).keypress(function(evt) {
 							if((evt.keyCode || evt.which) == 13){
 								if(this.value !== "") {
 									comment_modify(this.value, cmt_id);
@@ -40,9 +42,12 @@ var load = function() {
 								}
 							}
 						});
-						
 					});
-				});
+
+					$("#wall .item:first .comment_del:last").click(function(evt) {
+						comment_del(id, cmt_id);
+					});
+				});					
 				
 				$("#wall .item:first .comments").append("<input class='input_comment' type='text' /> <input class='comment_button' type='button' value='COMMENT' />");
 				
@@ -153,6 +158,16 @@ var comment_modify = function(contents, id) {
 
 var del = function(id) {	
 	$.delete('/posts/'+id, {}, function() {
+		load();
+	});
+}
+
+var comment_del = function(id, cmt_id) {
+	var postdata = {		
+		'post_id': id
+	};
+
+	$.delete('/comments/'+cmt_id, postdata, function() {
 		load();
 	});
 };
